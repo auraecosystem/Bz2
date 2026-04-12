@@ -423,6 +423,8 @@ Int32 main ( Int32 argc, Char** argv )
          }
          if (currBlock > 0 &&
              (bEnd[currBlock] - bStart[currBlock]) >= 130) {
+            if (rbCtr >= BZ_MAX_HANDLED_BLOCKS)
+               tooManyBlocks(BZ_MAX_HANDLED_BLOCKS);
             fprintf ( stderr, "   block %d runs from " MaybeUInt64_FMT
                               " to " MaybeUInt64_FMT "\n",
                       rbCtr+1,  bStart[currBlock], bEnd[currBlock] );
@@ -430,7 +432,7 @@ Int32 main ( Int32 argc, Char** argv )
             rbEnd[rbCtr] = bEnd[currBlock];
             rbCtr++;
          }
-         if (currBlock >= BZ_MAX_HANDLED_BLOCKS)
+         if (currBlock >= BZ_MAX_HANDLED_BLOCKS - 1)
             tooManyBlocks(BZ_MAX_HANDLED_BLOCKS);
          currBlock++;
 
