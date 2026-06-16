@@ -100,11 +100,37 @@ int bz_config_ok ( void )
 
 
 /*---------------------------------------------------*/
+/*--
+   Overflow-checked allocation size, in bytes.
+
+   Returns nelems*elemSize, or -1 if that product would overflow the
+   signed 32-bit int that libbzip2 uses for all sizes.  Callers pass
+   the result straight to BZALLOC(); default_bzalloc() turns a negative
+   request into NULL, which the existing call sites already report as
+   BZ_MEM_ERROR.  This way an over-large request fails cleanly instead
+   of silently wrapping around to an undersized buffer.
+--*/
+Int32 BZ2_allocSize ( Int32 nelems, Int32 elemSize )
+{
+   /* 0x7FFFFFFF == INT32_MAX; int is verified to be 4 bytes by
+      bz_config_ok() before any allocation happens. */
+   if (nelems < 0 || elemSize < 0) return -1;
+   if (elemSize != 0 && nelems > (Int32)0x7FFFFFFF / elemSize) return -1;
+   return nelems * elemSize;
+}
+
+
+/*---------------------------------------------------*/
 static
 void* default_bzalloc ( void* opaque, Int32 items, Int32 size )
 {
-   void* v = malloc ( items * size );
-   return v;
+   /* Refuse negative (e.g. a failed BZ2_allocSize) or overflowing
+      requests rather than handing a wrapped-around size to malloc().
+      The documented bzalloc(opaque,n,m) contract is to return n*m
+      bytes, so guard that multiplication here too. */
+   if (items < 0 || size < 0) return NULL;
+   if (size != 0 && items > (Int32)0x7FFFFFFF / size) return NULL;
+   return malloc ( (size_t)items * (size_t)size );
 }
 
 static
@@ -176,9 +202,9 @@ int BZ_API(BZ2_bzCompressInit)
    s->ftab = NULL;
 
    n       = 100000 * blockSize100k;
-   s->arr1 = BZALLOC( n                  * sizeof(UInt32) );
-   s->arr2 = BZALLOC( (n+BZ_N_OVERSHOOT) * sizeof(UInt32) );
-   s->ftab = BZALLOC( 65537              * sizeof(UInt32) );
+   s->arr1 = BZALLOC( BZ2_allocSize( n,                  sizeof(UInt32) ) );
+   s->arr2 = BZALLOC( BZ2_allocSize( n+BZ_N_OVERSHOOT,   sizeof(UInt32) ) );
+   s->ftab = BZALLOC( BZ2_allocSize( 65537,              sizeof(UInt32) ) );
 
    if (s->arr1 == NULL || s->arr2 == NULL || s->ftab == NULL) {
       if (s->arr1 != NULL) BZFREE(s->arr1);

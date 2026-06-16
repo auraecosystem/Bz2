@@ -52,6 +52,12 @@ Other changes, fixes:
 * Don't let `bzip2recover` overwrite existing output files by default.
   (Colin Phipps)
 
+* Harden memory allocation: allocation sizes are now computed with an
+  overflow-checked helper (`BZ2_allocSize`) and `default_bzalloc()`
+  refuses negative/overflowing requests, so an over-large request fails
+  cleanly with `BZ_MEM_ERROR` instead of wrapping around to an
+  undersized buffer.
+
 ### Special Thanks
 
 * Julian Seward for ceding maintainership and providing lots of advice
