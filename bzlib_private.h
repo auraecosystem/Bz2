@@ -100,6 +100,9 @@ extern void bz_internal_error ( int errcode );
 #define BZALLOC(nnn) (strm->bzalloc)(strm->opaque,(nnn),1)
 #define BZFREE(ppp)  (strm->bzfree)(strm->opaque,(ppp))
 
+/*-- Overflow-checked allocation size; see bzlib.c. --*/
+extern Int32 BZ2_allocSize ( Int32 nelems, Int32 elemSize );
+
 
 /*-- Header bytes. --*/
 
